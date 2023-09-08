@@ -69,32 +69,61 @@ UInt256 uint256_create_from_hex(const char *hex) {
   return result;
 }
 
-// Return a dynamically-allocated string of hex digits representing the
-// given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
   char *hex = NULL;
-  char *buf = (char *)malloc(65 * sizeof(char));
-  if (buf == NULL) {
-    printf("Memory allocation failed \n");
+
+  hex = (char *)malloc(65 * sizeof(char));
+  if (hex == NULL) {
+    printf("Memory allocation failed\n");
     return NULL;
   }
-  // extract first element in U256
-  for (int i = 0; i < 8; i++) {
-    int buf_index = 8;
 
-    uint32_t value = val.data[i];
-    // convert to hexadecimal
-    // store in char buf (starting at last index to represent least sig digit)
-    sprintf(buf + i, "%X", value);
-    hex[i] = buf[buf_index];
-    buf_index--;
+  char *buf = (char *)malloc(65 * sizeof(char));
+  if (buf == NULL) {
+    printf("Memory allocation failed\n");
+    free(hex); // Clean up previously allocated memory
+    return NULL;
   }
-  printf(" hex contents: %s \n", hex);
-  
+
+  // Extract first element in U256
+  for (int i = 7; i >= 0; i--) {
+    uint32_t value = val.data[i];
+    // Convert to hexadecimal
+    // Store in char buf (starting at last index to represent order of hexadecimal string)
+    int return_val = sprintf(buf, "%08x", value);
+    if (return_val < 0) {
+      printf("sprintf failed\n");
+      free(buf); // Clean up allocated memory
+      free(hex);
+      return NULL;
+    }
+    // Move the buffer pointer by the number of characters written
+    buf += return_val; 
+  }
+  // Reset the buffer pointer
+  buf = buf - 64; 
+
+  // Post-processing: Remove any unnecessary 0s
+  int buf_index = 0;
+  while (buf[buf_index] == '0') {
+    buf_index++;
+  }
+
+  // Copy the non-zero characters to the hex buffer
+  int hex_index = 0;
+  while (buf[buf_index] != '\0') {
+    hex[hex_index] = buf[buf_index];
+    hex_index++;
+    buf_index++;
+  }
+  hex[hex_index] = '\0'; // Null-terminate the hex string
+  // printf("buffer contents: %s \n", buf);
+  // printf("hex contents: %s \n", hex);
 
   free(buf);
   return hex;
 }
+
 
 // Get 32 bits of data from a UInt256 value.
 // Index 0 is the least significant 32 bits, index 7 is the most
