@@ -201,15 +201,57 @@ UInt256 uint256_negate(UInt256 val) {
 // should be shifted back into the least significant bits.
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
   UInt256 result;
-  // TODO: implement
+  uint32_t carry = 0;
+  uint32_t mask = 0xFFFFFFFFU << (32 - nbits);
+
+  for (int i = 0; i < 8; i++) {
+
+        if (carry != 0){
+
+          //carry = leftmost n bits of curr element val
+          carry = (val.data[i] & mask) >> (32 - nbits);
+
+          // left shift
+          result.data[i] = val.data[i] << nbits;
+
+          //add carry
+          result.data[i] = result.data[i] | carry;
+        } else {
+          //save leftmost n bits
+          carry = (val.data[i] & mask) >> (32 - nbits);
+          result.data[i] = (uint32_t)(val.data[i] << nbits);
+          if (i == 7){
+          // add last elements carry to the first element
+          result.data[0] = result.data[0] | carry;
+          }
+        }
+  }
   return result;
 }
+
 
 // Return the result of rotating every bit in val nbits to
 // the right. Any bits shifted past the least significant bit
 // should be shifted back into the most significant bits.
 UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
   UInt256 result;
-  // TODO: implement
+  uint32_t carry = 0;
+  uint32_t mask = 0xFFFFFFFFU >> (32 - nbits);
+
+  for (int i = 7; i >= 0; i--){
+    if (carry != 0){
+      carry = (val.data[i] & mask) << (32 - nbits);
+      //right shift
+      result.data[i] = val.data[i] >> nbits;
+      //add carry
+      result.data[i] = result.data[i] | carry;
+    } else {
+      carry = (val.data[i] & mask) << (32 - nbits);
+      result.data[i] = val.data[i] >> nbits;
+      if (i==0){
+        result.data[7] = result.data[7] | carry;
+      }
+    }
+  }
   return result;
 }

@@ -296,6 +296,8 @@ void test_rotate_left(TestObjs *objs) {
   result = uint256_rotate_left(objs->msb_set, 1);
   ASSERT_SAME(objs->one, result);
 
+  // rot val:
+  //    CD000000, 0U, 0U, 0U, 0U, 0U, 0U, 000000AB
   // after rotating the "rot" value left by 4 bits, the resulting value should be
   //   D0000000 00000000 00000000 00000000 00000000 00000000 00000000 00000ABC
   result = uint256_rotate_left(objs->rot, 4);
