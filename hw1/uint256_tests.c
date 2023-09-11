@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "tctest.h"
-
 #include "uint256.h"
 
 typedef struct {
@@ -168,10 +167,17 @@ void test_create(TestObjs *objs) {
 
 void test_create_from_hex(TestObjs *objs) {
   
-  // UInt256 actual;
-  // set_all(&actual,43828);
-  // UInt256 test =  uint256_create_from_hex("0xab34ab34ab34ab34ab34ab34ab34ab34ab34ab34ab34ab34ab34ab34ab34ab34");  
-  // ASSERT_SAME(actual,test);
+  UInt256 hex_63_char;
+  set_all(&hex_63_char,0);
+  hex_63_char.data[7] = 16777216;
+  UInt256 hex_63_char_test =  uint256_create_from_hex("100000000000000000000000000000000000000000000000000000000000000");  
+  ASSERT_SAME(hex_63_char,hex_63_char_test);
+
+  UInt256 hex_4_char;
+  set_all(&hex_4_char,0);
+  hex_4_char.data[0] = 4112;
+  UInt256 hex_4_char_test =  uint256_create_from_hex("1010");  
+  ASSERT_SAME(hex_4_char,hex_4_char_test);
 
   UInt256 zero = uint256_create_from_hex("0");
   ASSERT_SAME(objs->zero, zero);
@@ -179,19 +185,39 @@ void test_create_from_hex(TestObjs *objs) {
   UInt256 one = uint256_create_from_hex("1");
   ASSERT_SAME(objs->one, one);
 
+  UInt256 two_actual;
+  set_all(&two_actual,0U);
+  two_actual.data[0] = 2U;
+  UInt256 two = uint256_create_from_hex("2");
+  ASSERT_SAME(two_actual, two);
+
   UInt256 max = uint256_create_from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
   ASSERT_SAME(objs->max, max);
+
+  UInt256 hex_65_char_test = uint256_create_from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+  ASSERT_SAME(objs->max, hex_65_char_test);
 }
 
 void test_format_as_hex(TestObjs *objs) {
   char *s;
 
-  // s = uint256_format_as_hex(objs->zero);
-  // ASSERT(0 == strcmp("0", s));
-  // free(s);
+  s = uint256_format_as_hex(objs->zero);
+  ASSERT(0 == strcmp("0", s));
+  free(s);
 
   s = uint256_format_as_hex(objs->one);
   ASSERT(0 == strcmp("1", s));
+  free(s);
+
+  UInt256 two;
+  set_all(&two,0U);
+  two.data[0] = 2U;
+  s = uint256_format_as_hex(two);
+  ASSERT(0 == strcmp("2", s));
+  free(s);
+
+  s = uint256_format_as_hex(objs->msb_set);
+  ASSERT(0 == strcmp("8000000000000000000000000000000000000000000000000000000000000000", s));
   free(s);
 
   s = uint256_format_as_hex(objs->max);

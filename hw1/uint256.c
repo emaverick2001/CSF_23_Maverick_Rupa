@@ -1,5 +1,4 @@
 #include "uint256.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,11 +32,10 @@ UInt256 uint256_create(const uint32_t data[8]) {
 }
 
 // Create a UInt256 value from a string of hexadecimal digits.
-// test hex strings less than 64 characters
 UInt256 uint256_create_from_hex(const char *hex) {
   UInt256 result;
   // need 65 characters to include the null terminator
-  char temp[65];
+  char temp[65] = "";
   // case  *hex >= 64 hex digits
   // if less than 64 hex digits pad with zeroes
   int num_zeroes =
@@ -51,27 +49,34 @@ UInt256 uint256_create_from_hex(const char *hex) {
     int offset = strlen(hex) - 64;
     strncpy(temp, hex + offset, 64);
   }
-
+    int lastIndex = strlen(temp) - 1;
   // convert hex to uint32
   for (int i = 0; i < 8; i++) {
-    int lastIndex = strlen(temp) - 1;
     int startIndex = lastIndex - 7 * (i + 1);
 
-    // hexadec buffer
+    // hexadec buffer to hold a group of 8 chars for each element
     char hexChar_section[9];
+    // place 8 hex chars in hexchar section from last 8 chars in temp (least sig)
     strncpy(hexChar_section, temp + startIndex,
             8);  // 0-7 are chars, 8 is null term
     hexChar_section[8] = '\0';
-
+    //convert 8 char hex section into dec val
     uint32_t val = (uint32_t)strtoul(hexChar_section, NULL, 16);
+    //store val in element (val is just computer rep of binary string - we care about binary string taken as whole when rep 256 bit int)
     result.data[i] = val;
+    //decrease last index by 1 to get 8 char interval
+    lastIndex--;
   }
   return result;
 }
 
+// Return a dynamically-allocated string of hex digits representing the
+// given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
   char *hex = NULL;
+  int count = 0;
 
+  // create memory allocation to hold hex string
   hex = (char *)malloc(65 * sizeof(char));
   if (hex == NULL) {
     printf("Memory allocation failed\n");
@@ -81,30 +86,45 @@ char *uint256_format_as_hex(UInt256 val) {
   char *buf = (char *)malloc(65 * sizeof(char));
   if (buf == NULL) {
     printf("Memory allocation failed\n");
-    free(hex); // Clean up previously allocated memory
+    free(hex);
     return NULL;
   }
 
   // Extract first element in U256
   for (int i = 7; i >= 0; i--) {
+    // value represents dec val resulting from binary string in element
     uint32_t value = val.data[i];
     // Convert to hexadecimal
     // Store in char buf (starting at last index to represent order of hexadecimal string)
     int return_val = sprintf(buf, "%08x", value);
+    // Check to see if conversion succeeded
     if (return_val < 0) {
       printf("sprintf failed\n");
-      free(buf); // Clean up allocated memory
+      free(buf);
       free(hex);
       return NULL;
     }
+
+    //edge case when uint256 = 0
+    if (value == 0){
+      count++;
+    }
     // Move the buffer pointer by the number of characters written
     buf += return_val; 
+
   }
+  
   // Reset the buffer pointer
   buf = buf - 64; 
+  if(count == 8){
+    hex[0] = '0';
+    free(buf);
+    return hex;
+  }
 
   // Post-processing: Remove any unnecessary 0s
   int buf_index = 0;
+  //set start index to most sig digit
   while (buf[buf_index] == '0') {
     buf_index++;
   }
@@ -117,8 +137,6 @@ char *uint256_format_as_hex(UInt256 val) {
     buf_index++;
   }
   hex[hex_index] = '\0'; // Null-terminate the hex string
-  // printf("buffer contents: %s \n", buf);
-  // printf("hex contents: %s \n", hex);
 
   free(buf);
   return hex;
