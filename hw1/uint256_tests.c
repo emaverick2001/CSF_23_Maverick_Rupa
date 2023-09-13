@@ -196,6 +196,13 @@ void test_create_from_hex(TestObjs *objs) {
 
   UInt256 hex_65_char_test = uint256_create_from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
   ASSERT_SAME(objs->max, hex_65_char_test);
+
+  UInt256 num_and_letter;
+  uint32_t num_and_letter_data[8] = {0xabcd1234U,0U,0U,0U,0U,0U,0U,0U};
+  INIT_FROM_ARR(num_and_letter, num_and_letter_data);
+
+  UInt256 num_and_letter_test = uint256_create_from_hex("abcd1234");
+  ASSERT_SAME(num_and_letter, num_and_letter_test);
 }
 
 void test_format_as_hex(TestObjs *objs) {
@@ -237,8 +244,12 @@ void test_add(TestObjs *objs) {
   
   result = uint256_add(objs->max, objs->zero);
   ASSERT_SAME(objs->max, result);
+  
   result = uint256_add(objs->zero, objs->max);
   ASSERT_SAME(objs->max, result);
+
+  result = uint256_add(objs->max, objs->one);
+  ASSERT_SAME(objs->zero, result);
 
   uint32_t two_data[8] = { 2U };
   UInt256 two;
@@ -270,19 +281,6 @@ void test_add(TestObjs *objs) {
   result = uint256_add(case2, one_at_end);
   ASSERT_SAME(case2s, result);
 
-  //same error as when adding 0 to max
-  // UInt256 case3;  
-  // uint32_t case3_data[8] = {0U,0U,0U,0U,0U,0U,0U,0xFFFFFFFFU};
-  // UInt256 two_at_end;
-  // uint32_t two_at_end_data[8] = {0U,0U,0U,0U,0U,0U,0U,2U};
-  // UInt256 case3s;
-  // uint32_t case3s_data[8] = {0U,0U,0U,0U,0U,0U,0U,1U};
-  
-  // INIT_FROM_ARR(case3, case3_data);
-  // INIT_FROM_ARR(two_at_end, two_at_end_data);
-  // result = uint256_add(objs->max, two_at_end);
-  // ASSERT_SAME(case3s, result);
-
   result = uint256_add(objs->max, objs->one);
   ASSERT_SAME(objs->zero, result);
 }
@@ -311,6 +309,48 @@ void test_negate(TestObjs *objs) {
 
   result = uint256_negate(objs->max);
   ASSERT_SAME(objs->one, result);
+
+  UInt256 five;
+  uint32_t five_data[8] = {5U,0U,0U,0U,0U,0U,0U,0U};
+  INIT_FROM_ARR(five, five_data);
+
+  UInt256 five_s;
+  uint32_t five_s_data[8] = {4294967291U,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU};
+  INIT_FROM_ARR(five_s, five_s_data);
+  
+  result = uint256_negate(five);
+  ASSERT_SAME(five_s,result);
+
+  UInt256 max_first;  
+  uint32_t max_first_data[8] = {0xFFFFFFFFU,0U,0U,0U,0U,0U,0U,0U};
+  UInt256 max_first_s;
+  uint32_t max_first_s_data[8] = {1U,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU};
+  
+  INIT_FROM_ARR(max_first,max_first_data);
+  INIT_FROM_ARR(max_first_s,max_first_s_data);
+  result = uint256_negate(max_first);
+  ASSERT_SAME(max_first_s,result);
+  
+  UInt256 middle_is_one;  
+  uint32_t middle_is_one_data[8] = {0U,0U,0U,1U,0U,0U,0U,0U};
+  UInt256 middle_is_one_s;
+  uint32_t middle_is_one_s_data[8] = {0U,0U,0U,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU,0xFFFFFFFFU};
+  
+  INIT_FROM_ARR(middle_is_one, middle_is_one_data);
+  INIT_FROM_ARR(middle_is_one_s, middle_is_one_s_data);
+  result = uint256_negate(middle_is_one);
+  ASSERT_SAME(middle_is_one_s,result);
+
+  UInt256 last_is_one;  
+  uint32_t last_is_one_data[8] = {0U,0U,0U,0U,0U,0U,0U,1U};
+  INIT_FROM_ARR(last_is_one, last_is_one_data);
+
+  UInt256 last_is_one_s;
+  uint32_t last_is_one_s_data[8] = {0U,0U,0U,0U,0U,0U,0U,0xFFFFFFFFU};
+  INIT_FROM_ARR(last_is_one_s,last_is_one_s_data);
+  
+  result = uint256_negate(last_is_one);
+  ASSERT_SAME(last_is_one_s,result);
 }
 
 void test_rotate_left(TestObjs *objs) {
@@ -322,7 +362,13 @@ void test_rotate_left(TestObjs *objs) {
   result = uint256_rotate_left(objs->msb_set, 1);
   ASSERT_SAME(objs->one, result);
 
-  // rot val:
+  result = uint256_rotate_left(objs->msb_set, 32);
+  ASSERT_SAME(objs->zero, result);
+
+  result = uint256_rotate_left(objs->msb_set, 0);
+  ASSERT_SAME(result, result);
+
+  // rot val: (first = most sig)
   //    CD000000, 0U, 0U, 0U, 0U, 0U, 0U, 000000AB
   // after rotating the "rot" value left by 4 bits, the resulting value should be
   //   D0000000 00000000 00000000 00000000 00000000 00000000 00000000 00000ABC
@@ -335,6 +381,24 @@ void test_rotate_left(TestObjs *objs) {
   ASSERT(0U == result.data[5]);
   ASSERT(0U == result.data[6]);
   ASSERT(0xD0000000U == result.data[7]);
+
+  // rot val:
+  //   0xFFFFFFFF, 0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF, 0x00000000
+  // after rotating the "rot" value left by 4 bits, the resulting value should be
+  //   0xFFFFFFF0, 0x0000000F, 0xFFFFFFF0, 0x0000000F, 0xFFFFFFF0, 0x0000000F, 0xFFFFFFF0, 0x0000000F
+  UInt256 alt_num;
+  uint32_t alt_num_data[8] = {0x00000000U,0xFFFFFFFFU,0x00000000U,0xFFFFFFFFU,0x00000000U,0xFFFFFFFFU,0x00000000U,0xFFFFFFFFU};
+  INIT_FROM_ARR(alt_num,alt_num_data);
+
+  result = uint256_rotate_left(alt_num, 4);
+  ASSERT(0x0000000FU == result.data[0]);
+  ASSERT(0xFFFFFFF0U == result.data[1]);
+  ASSERT(0x0000000FU == result.data[2]);
+  ASSERT(0xFFFFFFF0U == result.data[3]);
+  ASSERT(0x0000000FU == result.data[4]);
+  ASSERT(0xFFFFFFF0U == result.data[5]);
+  ASSERT(0x0000000FU == result.data[6]);
+  ASSERT(0xFFFFFFF0U == result.data[7]);
 }
 
 void test_rotate_right(TestObjs *objs) {
